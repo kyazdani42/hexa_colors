@@ -1,28 +1,66 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useReducer } from "react";
+import { Hexa } from "./Hexa";
+import { reducer, initialState } from "./state";
+import { Button } from "./Button";
+import { colors } from "./constants";
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
-  }
-}
+export const App = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const dispatcher = getDispatchColorAction(dispatch);
+  return (
+    <React.Fragment>
+      <Svg zone={state.zone} />
+      {buttons(dispatcher)}
+    </React.Fragment>
+  );
+};
 
-export default App;
+const getDispatchColorAction = (dispatch: any) => (color: colorType) =>
+  dispatch({
+    type: "SET_COLOR",
+    payload: color
+  });
+
+const buttons = (dispatcher: any) =>
+  colors.map(color => (
+    <Button color={color} dispatchFunction={dispatcher} key={`color${color}`} />
+  ));
+
+const handleScreenSizeChange = (
+  window: Window,
+  setScreenSize: React.Dispatch<React.SetStateAction<number>>
+) => () => {
+  const listener = () => setScreenSize(window.innerWidth - 100);
+  window.addEventListener("resize", listener);
+  return () => window.removeEventListener("onresize", listener);
+};
+
+const Svg = ({ zone }: { zone: any[][] }) => {
+  const [screenSize, setScreenSize] = useState(window.innerWidth - 100);
+  useEffect(handleScreenSizeChange(window, setScreenSize), []);
+  const elements = zone.map((line: any) =>
+    line.map((props: any) => (
+      <Hexa
+        index={props.colIndex + 1}
+        lineNumber={props.lineIndex + 1}
+        key={`hexa${props.colIndex}${props.lineIndex}`}
+        screenSize={screenSize}
+        color={props.color}
+      />
+    ))
+  );
+  return (
+    <svg
+      id="svg"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: '30px',
+        width: "100%",
+        height: "100%"
+      }}
+    >
+      {elements}
+    </svg>
+  );
+};
